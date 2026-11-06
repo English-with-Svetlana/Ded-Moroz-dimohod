@@ -43,13 +43,18 @@ const assetLoads=new Map(),assetImages=new Map(),panoramaNodes=Array.from({lengt
 function ensureAsset(name){if(!assetLoads.has(name)){const load=async()=>{for(let attempt=0;attempt<3;attempt++){try{await new Promise((resolve,reject)=>{const im=new Image();assetImages.set(name,im);im.decoding='async';const fail=e=>reject(new Error(`Missing or unreadable asset: ${name} (${im.currentSrc||im.src}; ${e?.message||e?.type||"decode failed"})`));im.onload=()=>im.decode().then(resolve,fail);im.onerror=fail;im.src=asset(name);});return;}catch(e){if(attempt===2)throw e;await new Promise(resolve=>setTimeout(resolve,150*(attempt+1)));}}};assetLoads.set(name,load());}return assetLoads.get(name);}
 async function ensurePanorama(n){await ensureAsset(`${n}.png`);for(const im of panoramaNodes[n])if(!im.src)im.src=asset(`${n}.png`);}
 async function ensureVisiblePanoramas(from,to){const width=2172*scale,first=Math.max(1,Math.floor(Math.min(from,to)/width)+1),last=Math.min(4,Math.floor((Math.max(from,to)+1280)/width)+1);for(let n=first;n<=last;n++)await ensurePanorama(n);}
-function reportAssetFailure(e){$('error').hidden=false;$('error').textContent=e.message+' — please restore the supplied file and reload.';console.error(e);}
+function reportAssetFailure(e){$('error').style.visibility='visible';$('error').hidden=false;$('error').textContent=e.message+' — please restore the supplied file and reload.';console.error(e);}
 async function load(){try{
  for(let i=1;i<=4;i++){const im=new Image();im.decoding='async';panoramaNodes[i].push(im);$('world').append(im);}
  const sky=document.createElement('div');sky.className='sky-extension';
  for(const kind of ['cap','reflection']){const band=document.createElement('div');band.className='sky-band sky-'+kind;for(let i=1;i<=4;i++){const im=new Image();im.decoding='async';panoramaNodes[i].push(im);band.append(im);}sky.append(band);}$('world').append(sky);
+ render();
  await Promise.all(['1.png','ded.gif','frame 2.png','gift 1.png'].map(ensureAsset));await ensurePanorama(1);
- $('sleigh').src=asset('ded.gif');$('question-art').src=asset('frame 2.png');state='ready';$('start').disabled=false;$('start').textContent='Start';render();
+ $('sleigh').src=asset('ded.gif');$('question-art').src=asset('frame 2.png');
+ // Decode the actual visible DOM images, not only the detached preload images.
+ // Keep the entire stage masked until its panorama, sky strips and sleigh can paint together.
+ for(const im of [...panoramaNodes[1],$('sleigh'),$('question-art')])await im.decode();
+ await new Promise(resolve=>requestAnimationFrame(()=>{resize();render();$('sleigh').hidden=false;state='ready';$('start').disabled=false;$('start').textContent='Start';$('welcome').hidden=false;$('stage').setAttribute('aria-busy','false');$('stage').style.visibility='visible';resolve();}));
  // Later scenery is prepared one section at a time. A stop also awaits its visible sections.
  Promise.all([...(Array.from({length:4},(_,i)=>ensureAsset(`gift ${i+2}.png`))),ensureAsset('frame.png')]).then(()=>{$('completion-art').src=asset('frame.png');}).catch(reportAssetFailure);
  (async()=>{for(let n=2;n<=4;n++)await ensurePanorama(n);})().catch(reportAssetFailure);
