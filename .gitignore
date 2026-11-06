@@ -1,0 +1,36 @@
+# Local dependencies and build/conversion caches
+node_modules/
+.build/
+.cache/
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+
+# Operating-system, editor and temporary files
+.DS_Store
+Thumbs.db
+*.log
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+/tmp/
+/temp/
+/coverage/
+
+# Local environment configuration
+.env
+.env.*
+!.env.example
+
+# Generated QA output and historical development reports (keep test sources)
+/tests/*-results.json
+/tests/optimization-pixels.json
+/tests/production-size.json
+/tests/production-readiness.json
+/tests/*.md
+
+# Intentionally INCLUDED: docs/**, .github/workflows/**, release-manifest.json,
+# build sources, package-lock.json, and original PNG/GIF assets for rebuilding.

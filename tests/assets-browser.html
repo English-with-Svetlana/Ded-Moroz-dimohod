@@ -1,0 +1,24 @@
+<!doctype html><meta charset="utf-8"><title>Browser asset and startup QA</title><pre id="results">RUNNING</pre><script>
+(async()=>{
+ const results={assets:[],pages:[],errors:[]};
+ try{
+ const manifest=await (await fetch('../docs/assets.json',{cache:'no-store'})).json();
+ for(const [original,hashed] of Object.entries(manifest))for(const path of ['../'+original,'../docs/'+hashed]){
+  const url=new URL(path,location.href);const r=await fetch(url,{cache:'no-store'});if(r.status!==200)throw Error(url+' HTTP '+r.status);
+  const im=new Image();im.src=url.href;await im.decode();if(!im.naturalWidth)throw Error('No pixels: '+url);results.assets.push({path:decodeURI(url.pathname),status:r.status,width:im.naturalWidth,height:im.naturalHeight,decoded:true});
+ }
+ for(const path of ['../index.html','../iframe.html','../docs/publication.html']){
+  const frame=document.createElement('iframe');frame.style='width:1280px;height:720px';document.body.append(frame);await new Promise((resolve,reject)=>{frame.onload=resolve;frame.onerror=reject;frame.src=path;});
+  let w=frame.contentWindow; if(!w.gameDiagnostics){const nested=w.document.querySelector('iframe');if(!nested.contentWindow.gameDiagnostics)await new Promise(r=>nested.addEventListener('load',r,{once:true}));w=nested.contentWindow;}
+  w.addEventListener('error',e=>results.errors.push(e.message));w.addEventListener('unhandledrejection',e=>results.errors.push(String(e.reason)));
+  await new Promise((resolve,reject)=>{let tries=0;let t=setInterval(()=>{if(w.gameDiagnostics?.().state==='ready'){clearInterval(t);resolve();}else if(++tries>150){clearInterval(t);reject(Error(path+' did not reach ready: '+w.document.getElementById('error').textContent));}},100);});
+  const start=w.document.getElementById('start');if(start.disabled)throw Error(path+' Start disabled');start.click();await new Promise((resolve,reject)=>{let tries=0;let t=setInterval(()=>{if(w.gameDiagnostics().state==='question'){clearInterval(t);resolve();}else if(++tries>100){clearInterval(t);reject(Error(path+' did not start'));}},100);});
+  if(!w.document.getElementById('error').hidden)throw Error(path+' blocking error');
+  for(const im of w.document.images)if(im.src)await im.decode();
+  results.pages.push({path,state:w.gameDiagnostics().state,prompt:w.document.getElementById('prompt').textContent,blockingError:false});frame.remove();
+ }
+ results.pass=results.errors.length===0;
+ }catch(e){results.pass=false;results.errors.push(e.stack||String(e));}
+ document.getElementById('results').textContent=JSON.stringify(results,null,2);document.title=results.pass?'PASS':'FAIL';
+})();
+</script>

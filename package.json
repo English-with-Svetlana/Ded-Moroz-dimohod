@@ -1,0 +1,14 @@
+{
+  "name": "father-frost-helps-santa",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Local-only build tools; the published game has no package dependencies.",
+  "scripts": {
+    "build": "python3 build.py",
+    "check": "node --check game.js && node --check celebration.js"
+  },
+  "devDependencies": {
+    "clean-css": "5.3.3",
+    "terser": "5.51.2"
+  }
+}
