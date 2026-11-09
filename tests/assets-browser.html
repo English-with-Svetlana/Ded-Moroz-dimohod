@@ -5,6 +5,7 @@
  const manifest=await (await fetch('../docs/assets.json',{cache:'no-store'})).json();
  for(const [original,hashed] of Object.entries(manifest))for(const path of ['../'+original,'../docs/'+hashed]){
   const url=new URL(path,location.href);const r=await fetch(url,{cache:'no-store'});if(r.status!==200)throw Error(url+' HTTP '+r.status);
+  if(path.endsWith('.wav')){const context=new OfflineAudioContext(1,22050,22050);const audio=await context.decodeAudioData(await r.arrayBuffer());results.assets.push({path:decodeURI(url.pathname),status:r.status,duration:audio.duration,decoded:true});continue;}
   const im=new Image();im.src=url.href;await im.decode();if(!im.naturalWidth)throw Error('No pixels: '+url);results.assets.push({path:decodeURI(url.pathname),status:r.status,width:im.naturalWidth,height:im.naturalHeight,decoded:true});
  }
  for(const path of ['../index.html','../iframe.html','../docs/publication.html']){

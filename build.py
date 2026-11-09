@@ -4,22 +4,25 @@ import hashlib,json,re,subprocess,shutil,tempfile,concurrent.futures
 root=Path(__file__).resolve().parent
 out=root/'docs'; asset_dir=out/'assets'; asset_dir.mkdir(parents=True,exist_ok=True)
 cache=root/'.build'/'image-cache'; cache.mkdir(parents=True,exist_ok=True)
-names=['1.png','2.png','3.png','4.png','ded.gif','frame.png','frame 2.png']+[f'gift {i}.png' for i in range(1,6)]
+names=['audio/delivery-twinkle.wav','1.png','2.png','3.png','4.png','ded.gif','frame.png','frame 2.png']+[f'gift {i}.png' for i in range(1,6)]
 def digest(data): return hashlib.sha256(data).hexdigest()[:12]
 def command(args): return subprocess.run(args,check=True,capture_output=True)
 webp_version=command(['cwebp','-version']).stdout.decode().splitlines()[0]
 gif_version=command(['gif2webp','-version']).stdout.decode().splitlines()[0]
 def optimize(name):
- source=root/name
+ if name.endswith('.wav'):
+  data=(root/name).read_bytes();filename='delivery-twinkle-'+digest(data)+'.wav';(asset_dir/filename).write_bytes(data);return name,'assets/'+filename
+ source=root/('new_backgrounds' if name in ['1.png','2.png','3.png','4.png'] else '')/name
  if name.startswith('gift'):
   small=cache/(hashlib.sha256(source.read_bytes()).hexdigest()+'-192.png')
   if not small.exists(): command(['sips','-Z','192',str(source),'--out',str(small)])
   source=small
+ background=name in ['1.png','2.png','3.png','4.png']
  animated=name=='ded.gif'
- recipe=('gif-lossless-minsize-m6-q100-icc:'+gif_version) if animated else ('static-lossless-exact-m6-q100-icc:'+webp_version)
+ recipe=('background-q95-sharp-yuv-m6-icc:'+webp_version) if background else ('gif-lossless-minsize-m6-q100-icc:'+gif_version) if animated else ('static-lossless-exact-m6-q100-icc:'+webp_version)
  target=cache/(hashlib.sha256(source.read_bytes()+recipe.encode()).hexdigest()+'.webp')
  if not target.exists():
-  command((['gif2webp','-min_size','-m','6','-q','100','-metadata','icc',str(source),'-o',str(target)]) if animated else ['cwebp','-quiet','-lossless','-exact','-m','6','-q','100','-metadata','icc',str(source),'-o',str(target)])
+  command(['cwebp','-quiet','-q','95','-sharp_yuv','-m','6','-metadata','icc',str(source),'-o',str(target)] if background else (['gif2webp','-min_size','-m','6','-q','100','-metadata','icc',str(source),'-o',str(target)]) if animated else ['cwebp','-quiet','-lossless','-exact','-m','6','-q','100','-metadata','icc',str(source),'-o',str(target)])
  chosen=target if target.stat().st_size<source.stat().st_size else source
  data=chosen.read_bytes(); filename=name.rsplit('.',1)[0].replace(' ','-')+'-'+digest(data)+chosen.suffix
  (asset_dir/filename).write_bytes(data)

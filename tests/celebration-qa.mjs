@@ -6,7 +6,7 @@ async function wait(expression){let end=Date.now()+15000;while(Date.now()<end){i
 async function click(id){const p=await evaluate(`(()=>{const r=document.getElementById('${id}').getBoundingClientRect();return{x:r.x+r.width/2,y:r.y+r.height/2}})()`);await call('Input.dispatchMouseEvent',{type:'mousePressed',...p,button:'left',clickCount:1});await call('Input.dispatchMouseEvent',{type:'mouseReleased',...p,button:'left',clickCount:1});}
 async function viewport(width,height){await call('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:false});await evaluate('new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))');}
 try{
- await call('Runtime.enable');await call('Page.enable');await call('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:'no-preference'}]});
+ await call('Runtime.enable');await call('Page.enable');await call('Page.bringToFront');await call('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:'no-preference'}]});
  for(const path of ['index.html','docs/index.html']){
   await viewport(1280,720);await call('Page.navigate',{url:'http://127.0.0.1:8765/'+path});await wait('window.gameDiagnostics?.().state==="ready"');await click('start');await wait('gameDiagnostics().state==="question"');
   // The separate full-playthrough suite verifies houses 1–16. Here jump to the final stop to soak-test its normal-motion celebration.
