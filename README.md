@@ -71,10 +71,14 @@ Images, scripts and styles have content-hashed **filenames**. The manifest and H
 
 `release-manifest.json` tracks the current and previous prepared release; the build retains previous-release hashed resources so cached HTML from the preceding update can still load its matching files. Keep this file with the project and let the builder prune obsolete resources. The initial optimized publication contains only current resources.
 
-Production HTML includes advisory no-cache metadata. Actual HTTP caching on GitHub Pages is controlled by GitHub, not by files in this project; this workflow cannot force a custom Cache-Control header. Content hashing and previous-release retention prevent ordinary cross-release asset mismatch, but do not promise instant replacement of an already cached HTML document or indefinitely retain arbitrarily old releases. The permanent iframe URL never changes.
+GitHub Pages controls HTTP cache headers and serves this HTML with a ten-minute freshness window and ETag revalidation. The production HTML contains a content-derived release ID and starts a background request for the same entry URL with a one-time query parameter. If it finds a different release before Start, the iframe navigates to that URL once and restores the permanent URL in its history. Start remains available while the check runs. After Start, the game keeps its current release for the rest of the session.
+
+The check requires network access and an updated HTML document that includes the checker. A browser holding HTML from before this feature will pick it up through normal HTTP revalidation. The query parameter bypasses the browser cache. GitHub Pages may serve a cached edge response even for a unique query, so edge freshness and propagation can delay detection. The build retains the preceding release's assets for cached documents.
 
 ## Results and tests
 
 [Production optimization and QA report](PRODUCTION-REPORT.md)
 
-The final checks cover exact asset pixels/frames, workflow YAML, resource hashes/paths, simulated gameplay, and focused Chrome startup/first-delivery/final-sequence/iframe tests. Earlier files under `tests/` describe earlier designs and are historical unless referenced by the current production report. No commit, push or deployment has been run.
+The final checks cover exact asset pixels/frames, workflow YAML, resource hashes/paths, simulated gameplay, and focused Chrome startup/first-delivery/final-sequence/iframe tests. Earlier files under `tests/` describe earlier designs and are historical unless referenced by the current production report.
+
+Run the cross-origin warm-cache update test with Chrome remote debugging on port 9223 using `node tests/release-cache-qa.mjs`.

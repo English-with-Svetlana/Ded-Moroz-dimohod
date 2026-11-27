@@ -1,1 +1,65 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta http-equiv="Cache-Control" content="no-cache, max-age=0, must-revalidate"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#061c3c"><title>Father Frost Helps Santa</title><link rel="stylesheet" href="assets/style-20cbd3b5dc86.css"></head><body><div id="loading" role="status" style="position:fixed;z-index:1;inset:0;display:grid;place-items:center;color:#fff7df;font:clamp(18px,2.2vw,32px)/1.2 Georgia,'Times New Roman',serif;pointer-events:none">Loading...</div><main id="frame"><div id="stage" style="visibility:hidden" aria-busy="true"><div id="world" aria-hidden="true"></div><img id="sleigh" hidden alt="Father Frost in a sleigh pulled by nine reindeer"><img id="gift" alt="Christmas present" hidden><div id="particles" aria-hidden="true"></div><section id="question" hidden aria-live="polite"><img id="question-art" class="panel-art" alt=""><div class="question-content"><span class="eyebrow" id="house"></span><h2 id="prompt"></h2><button id="deliver">Deliver! <span aria-hidden="true">↓</span></button></div></section><section id="welcome" class="start-screen" hidden><button id="start" disabled>Start</button></section><section id="ending" class="celebration-screen" hidden aria-live="polite"><canvas id="fireworks" width="1280" height="720" aria-hidden="true"></canvas><div class="completion-frame"><img id="completion-art" class="panel-art" alt=""><div class="completion-copy"><h1>Father Frost saved Christmas!</h1><p>All 16 presents have been delivered!</p><p>Merry Christmas!</p></div></div></section><div id="error" role="alert" hidden></div></div></main><script src="assets/celebration-233f70185add.js"></script><script src="assets/game-94ca89794659.js"></script></body></html>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#061c3c"><title>Father Frost Helps Santa</title><link rel="stylesheet" href="assets/style-20cbd3b5dc86.css"><script data-release="b3575f3f8da0">
+// This script is inlined in the production entry so the check can run during loading.
+(() => {
+  const currentRelease = document.currentScript.dataset.release;
+  const updateParam = '_frost_update';
+  const entry = new URL(location.href);
+  const updateNavigation = entry.searchParams.has(updateParam);
+  entry.searchParams.delete(updateParam);
+
+  let started = false;
+  let checking = false;
+  let navigating = false;
+
+  document.addEventListener('click', event => {
+    if (!event.target.closest?.('#start')) return;
+    if (navigating) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      return;
+    }
+    started = true;
+  }, true);
+
+  async function checkRelease() {
+    if (started || checking || navigating) return;
+    checking = true;
+
+    const probe = new URL(entry);
+    probe.hash = '';
+    const nonce = crypto.getRandomValues(new Uint32Array(2)).join('-');
+    probe.searchParams.set(updateParam, nonce);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+    try {
+      const response = await fetch(probe, { cache: 'no-store', signal: controller.signal });
+      if (!response.ok) return;
+      const html = await response.text();
+      const release = html.match(/<script data-release="([a-f0-9]{12})">/)?.[1];
+      if (!release || release === currentRelease || started) return;
+
+      // Use the URL that served the newer HTML and keep the presentation's history intact.
+      probe.hash = entry.hash;
+      navigating = true;
+      location.replace(probe);
+    } catch {
+      // A failed check leaves the game playable.
+      navigating = false;
+    } finally {
+      clearTimeout(timeout);
+      checking = false;
+    }
+  }
+
+  if (updateNavigation) {
+    // Skip the check on this navigation to prevent reload loops during an edge rollout.
+    try { history.replaceState(history.state, '', entry); } catch {}
+  } else {
+    void checkRelease();
+  }
+
+  addEventListener('pageshow', event => {
+    if (event.persisted) void checkRelease();
+  });
+})();
+</script></head><body><div id="loading" role="status" style="position:fixed;z-index:1;inset:0;display:grid;place-items:center;color:#fff7df;font:clamp(18px,2.2vw,32px)/1.2 Georgia,'Times New Roman',serif;pointer-events:none">Loading...</div><main id="frame"><div id="stage" style="visibility:hidden" aria-busy="true"><div id="world" aria-hidden="true"></div><img id="sleigh" hidden alt="Father Frost in a sleigh pulled by nine reindeer"><img id="gift" alt="Christmas present" hidden><div id="particles" aria-hidden="true"></div><section id="question" hidden aria-live="polite"><img id="question-art" class="panel-art" alt=""><div class="question-content"><span class="eyebrow" id="house"></span><h2 id="prompt"></h2><button id="deliver">Deliver! <span aria-hidden="true">↓</span></button></div></section><section id="welcome" class="start-screen" hidden><button id="start" disabled>Start</button></section><section id="ending" class="celebration-screen" hidden aria-live="polite"><canvas id="fireworks" width="1280" height="720" aria-hidden="true"></canvas><div class="completion-frame"><img id="completion-art" class="panel-art" alt=""><div class="completion-copy"><h1>Father Frost saved Christmas!</h1><p>All 16 presents have been delivered!</p><p>Merry Christmas!</p></div></div></section><div id="error" role="alert" hidden></div></div></main><script src="assets/celebration-233f70185add.js"></script><script src="assets/game-94ca89794659.js"></script></body></html>

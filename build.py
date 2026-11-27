@@ -46,12 +46,11 @@ with tempfile.TemporaryDirectory(prefix='frost-release-') as temp:
  for name in ['game.js','celebration.js','style.css']:
   data=(outputs/name).read_bytes(); stem,ext=name.rsplit('.',1);filename=f'{stem}-{digest(data)}.{ext}';(asset_dir/filename).write_bytes(data);code_assets[name]='assets/'+filename
  html=(root/'index.html').read_text()
- # HTML cache directives are advisory; Pages controls actual HTTP cache headers.
- if 'http-equiv="Cache-Control"' not in html:
-  html=html.replace('<meta name="viewport"','<meta http-equiv="Cache-Control" content="no-cache, max-age=0, must-revalidate"><meta name="viewport"',1)
  for name,path in code_assets.items(): html=re.sub(re.escape(name)+r'(?:\?v=[a-f0-9]+)?',path,html)
  html=html.replace('<div id="calibration" hidden></div>','')
- (out/'index.html').write_text(html)
+ updater=(root/'tools'/'release-check.js').read_text()
+ html=html.replace('</head>',f'<script data-release="__RELEASE__">\n{updater}</script></head>',1)
+ (out/'index.html').write_text(html.replace('__RELEASE__',digest(html.encode()),1))
  for name in ['iframe.html','publication.html']: shutil.copyfile(root/name,out/name)
  # Root remains the editable development entry, with equivalent optimized imagery.
  root_html=(root/'index.html').read_text()
